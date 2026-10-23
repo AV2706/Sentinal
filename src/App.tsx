@@ -45,7 +45,7 @@ import {
 
 type Role = "business" | "creator"
 type Status = "pending" | "accepted" | "declined"
-type Page = "overview" | "discover" | "campaigns" | "collaborations" | "budget" | "billing" | "settings" | "home" | "opportunities" | "requests" | "my-collaborations" | "profile" | "earnings" | "planner" | "creator-insights" | "business-insights"
+type Page = "overview" | "discover" | "campaigns" | "collaborations" | "chat" | "budget" | "billing" | "settings" | "home" | "opportunities" | "requests" | "my-collaborations" | "profile" | "earnings" | "planner" | "creator-insights" | "business-insights"
 
 type Campaign = {
   id: string
@@ -95,6 +95,13 @@ type ChatMessage = {
   createdAt: string
 }
 
+type CollaborationMessage = {
+  id: string
+  sender: Role | "system"
+  text: string
+  createdAt: string
+}
+
 type Review = {
   id: string
   creatorId: string
@@ -120,6 +127,7 @@ type AppData = {
   requests: Request[]
   profile: CreatorProfile
   conversations: Record<Role, ChatMessage[]>
+  collaborationMessages: CollaborationMessage[]
   reviews: Review[]
   productionBookings: ProductionBooking[]
 }
@@ -265,6 +273,14 @@ const initialData: AppData = {
       },
     ],
   },
+  collaborationMessages: [
+    {
+      id: "collaboration-welcome",
+      sender: "system",
+      text: "This is the shared collaboration thread. Confirm scope, availability, production needs, and payment terms here.",
+      createdAt: "2026-06-16T09:00:00.000Z",
+    },
+  ],
   reviews: [
     {
       id: "review-maya-1",
@@ -453,6 +469,7 @@ const businessNav: Array<[Page, string, LucideIcon]> = [
   ["discover", "Discover creators", Compass],
   ["campaigns", "Campaigns", BriefcaseBusiness],
   ["collaborations", "Collaborations", Handshake],
+  ["chat", "Collaboration chat", MessageSquare],
   ["budget", "Budget & schedule", WalletCards],
   ["billing", "Billing & plans", CircleDollarSign],
   ["planner", "AI campaign planner", Bot],
@@ -464,6 +481,7 @@ const creatorNav: Array<[Page, string, LucideIcon]> = [
   ["opportunities", "Discover campaigns", Compass],
   ["requests", "Collaboration requests", Bell],
   ["my-collaborations", "My collaborations", Handshake],
+  ["chat", "Collaboration chat", MessageSquare],
   ["profile", "My profile", UserRound],
   ["creator-insights", "Creator insights", BarChart3],
   ["earnings", "Earnings", CircleDollarSign],
@@ -803,6 +821,8 @@ function App() {
           ...initialData.conversations,
           ...saved.conversations,
         },
+        collaborationMessages:
+          saved.collaborationMessages ?? initialData.collaborationMessages,
         reviews: saved.reviews ?? initialData.reviews,
         productionBookings:
           saved.productionBookings ?? initialData.productionBookings,
@@ -821,6 +841,30 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  }, [data])
+
+  useEffect(() => {
+    const syncSavedData = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || !event.newValue) return
+      try {
+        if (JSON.stringify(data) === event.newValue) return
+        const saved = JSON.parse(event.newValue) as Partial<AppData>
+        setData((current) => ({
+          ...current,
+          ...saved,
+          conversations: {
+            ...current.conversations,
+            ...saved.conversations,
+          },
+          collaborationMessages:
+            saved.collaborationMessages ?? current.collaborationMessages,
+        }))
+      } catch {
+        // Ignore malformed data from an unrelated local storage write.
+      }
+    }
+    window.addEventListener("storage", syncSavedData)
+    return () => window.removeEventListener("storage", syncSavedData)
   }, [data])
 
   useEffect(() => {
@@ -1036,6 +1080,8 @@ function BusinessPages({
     )
   if (page === "collaborations")
     return <BusinessCollaborations data={data} invite={invite} />
+  if (page === "chat")
+    return <CollaborationChat role="business" data={data} setData={setData} />
   if (page === "budget") return <BudgetSchedule data={data} />
   if (page === "billing") return <BillingPage role="business" />
   return <SettingsPage reset={reset} role="business" setData={setData} />
@@ -1078,9 +1124,14 @@ function BusinessOverview({
         title="Good morning, GlowLab"
         description="Here’s what’s moving across your creator campaigns."
         action={
-          <Button icon={Plus} onClick={openCampaign}>
-            New campaign
-          </Button>
+          <div className="button-row">
+            <Button variant="secondary" icon={MessageSquare} onClick={() => setPage("chat")}>
+              Open chat
+            </Button>
+            <Button icon={Plus} onClick={openCampaign}>
+              New campaign
+            </Button>
+          </div>
         }
       />
       <div className="metrics metrics-four">
@@ -2059,6 +2110,8 @@ function CreatorPages({
     return <CreatorRequests data={data} updateStatus={updateStatus} />
   if (page === "my-collaborations")
     return <MyCollaborations data={data} setData={setData} toast={toast} />
+  if (page === "chat")
+    return <CollaborationChat role="creator" data={data} setData={setData} />
   if (page === "creator-insights") return <CreatorInsights data={data} />
   if (page === "profile")
     return <ProfileEditor data={data} setData={setData} toast={toast} />
@@ -2105,6 +2158,9 @@ function CreatorHome({
           </div>
           <button onClick={() => setPage("profile")}>
             Complete profile <ArrowRight size={14} />
+          </button>
+          <button className="creator-chat-link" onClick={() => setPage("chat")}>
+            <MessageSquare size={14} /> Open collaboration chat
           </button>
         </div>
       </div>
@@ -3321,6 +3377,101 @@ function CampaignPlanner({
           </form>
         </section>
       </div>
+    </>
+  )
+}
+
+function CollaborationChat({
+  role,
+  data,
+  setData,
+}: {
+  role: Role
+  data: AppData
+  setData: React.Dispatch<React.SetStateAction<AppData>>
+}) {
+  const [message, setMessage] = useState("")
+  const messages = data.collaborationMessages
+  const quickReplies =
+    role === "business"
+      ? ["Share the campaign brief", "Request creator availability", "Propose ₹5,000 budget"]
+      : ["Ask about deliverables", "Share my availability", "Confirm production needs"]
+
+  const send = (text: string) => {
+    const clean = text.trim()
+    if (!clean) return
+    const userMessage: CollaborationMessage = {
+      id: `collab-user-${Date.now()}`,
+      sender: role,
+      text: clean,
+      createdAt: new Date().toISOString(),
+    }
+    setData((current) => ({
+      ...current,
+      collaborationMessages: [...current.collaborationMessages, userMessage],
+    }))
+    setMessage("")
+  }
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Collaboration workspace"
+        title="Business ↔ Creator chat"
+        description="Keep scope, availability, production needs, and budget decisions together."
+      />
+      <section className="collaboration-chat-layout">
+        <aside className="panel collaboration-chat-context">
+          <p className="eyebrow">Current conversation</p>
+          <h2>{role === "business" ? "GlowLab × Maya Creates" : "Maya Creates × GlowLab"}</h2>
+          <p>Use this thread to confirm details before moving a request into an active collaboration.</p>
+          <div className="chat-checklist">
+            <span><Check size={14} /> Campaign scope</span>
+            <span><Check size={14} /> Availability and deadlines</span>
+            <span><Check size={14} /> Equipment and production</span>
+            <span><Check size={14} /> Fee and payment terms</span>
+          </div>
+        </aside>
+        <section className="chat-panel collaboration-chat-panel">
+          <div className="chat-head">
+            <span className="assistant-avatar"><MessageSquare /></span>
+            <div>
+              <strong>Collaboration thread</strong>
+              <span><i /> Shared workspace</span>
+            </div>
+            <Badge status="active">Live</Badge>
+          </div>
+          <div className="chat-messages" aria-live="polite">
+            {messages.map((item) => (
+              <div className={cx("chat-message", item.sender === "system" ? "chat-assistant" : item.sender === role ? "chat-user" : "chat-partner")} key={item.id}>
+                {item.sender === "system" && <span><Bot size={15} /></span>}
+                <div>
+                  <p>{item.text}</p>
+                  <small>
+                    {item.sender === "system"
+                      ? "Collaboration assistant"
+                      : item.sender === "business"
+                        ? "GlowLab"
+                        : "Maya Creates"}
+                  </small>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="prompt-chips">
+            {quickReplies.map((quickReply) => (
+              <button key={quickReply} onClick={() => send(quickReply)}>{quickReply}</button>
+            ))}
+          </div>
+          <form className="chat-composer" onSubmit={(event) => { event.preventDefault(); send(message) }}>
+            <label>
+              <span className="sr-only">Message your collaboration partner</span>
+              <textarea rows={2} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message about scope, timing, equipment, or budget..." />
+            </label>
+            <Button icon={Send} type="submit">Send</Button>
+          </form>
+        </section>
+      </section>
     </>
   )
 }

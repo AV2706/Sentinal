@@ -471,6 +471,8 @@
 .chat-user > div { background: var(--violet); border-color: var(--violet); border-radius: 12px 4px 12px 12px; }
 .chat-user p { color: white; }
 .chat-user small { color: #ddd6ff; text-align: right; }
+.chat-partner { align-self: flex-start; }
+.chat-partner > div { border-left: 3px solid #e7b1bb; }
 .typing { min-width: 56px; display: flex; gap: 4px; align-items: center; min-height: 39px; }
 .typing i { width: 5px; height: 5px; border-radius: 50%; background: #aaa1d6; animation: pulse 1s infinite ease-in-out; }
 .typing i:nth-child(2) { animation-delay: .15s; }.typing i:nth-child(3) { animation-delay: .3s; }
@@ -762,6 +764,18 @@ input:focus, select:focus, textarea:focus { border-color: #8d263a; box-shadow: 0
 .chat-user > div { background: #28051f; border-color: #28051f; }
 .chat-message p { color: #806773; }
 .chat-user p { color: #f9e9eb; }
+.collaboration-chat-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; }
+.collaboration-chat-context { padding: 24px; }
+.collaboration-chat-context h2 { margin-top: 12px; font-size: 22px; }
+.collaboration-chat-context > p:not(.eyebrow) { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.chat-checklist { display: grid; gap: 12px; margin-top: 24px; color: var(--muted); font-size: 12px; }
+.chat-checklist span { display: flex; align-items: center; gap: 8px; }
+.chat-checklist svg { color: var(--violet); }
+.collaboration-chat-panel { min-height: 580px; }
+@media (max-width: 820px) {
+  .collaboration-chat-layout { grid-template-columns: 1fr; }
+  .collaboration-chat-context { display: none; }
+}
 .topbar { backdrop-filter: none; }
 .campaign-visual, .match-visual { background: #ead0d6; color: #28051f; }
 .trend-bars, .bar-chart { background: #f9e9eb; }
