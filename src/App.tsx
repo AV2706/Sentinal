@@ -45,7 +45,7 @@ import {
 
 type Role = "business" | "creator"
 type Status = "pending" | "accepted" | "declined"
-type Page = "overview" | "discover" | "campaigns" | "collaborations" | "budget" | "settings" | "home" | "opportunities" | "requests" | "my-collaborations" | "profile" | "earnings" | "planner" | "creator-insights" | "business-insights"
+type Page = "overview" | "discover" | "campaigns" | "collaborations" | "budget" | "billing" | "settings" | "home" | "opportunities" | "requests" | "my-collaborations" | "profile" | "earnings" | "planner" | "creator-insights" | "business-insights"
 
 type Campaign = {
   id: string
@@ -454,6 +454,7 @@ const businessNav: Array<[Page, string, LucideIcon]> = [
   ["campaigns", "Campaigns", BriefcaseBusiness],
   ["collaborations", "Collaborations", Handshake],
   ["budget", "Budget & schedule", WalletCards],
+  ["billing", "Billing & plans", CircleDollarSign],
   ["planner", "AI campaign planner", Bot],
   ["settings", "Settings", Settings],
 ]
@@ -466,79 +467,115 @@ const creatorNav: Array<[Page, string, LucideIcon]> = [
   ["profile", "My profile", UserRound],
   ["creator-insights", "Creator insights", BarChart3],
   ["earnings", "Earnings", CircleDollarSign],
+  ["billing", "Billing & plans", WalletCards],
   ["planner", "AI campaign planner", Bot],
 ]
 
 function Welcome({ onSelect }: { onSelect: (role: Role) => void }) {
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+  }
+
   return (
     <main className="welcome">
       <nav className="welcome-nav">
-        <Logo />
-        <Badge status="demo">Demo workspace</Badge>
-      </nav>
-      <section className="welcome-grid">
-        <div className="welcome-copy">
-          <div className="kicker">
-            <Sparkles size={15} />
-            One workspace. Better collaborations.
-          </div>
-          <h1>Creator campaigns, without the scattered spreadsheets.</h1>
-          <p>
-            Discover the right partners, align on deliverables, and keep budgets
-            and deadlines in sync—from first invite to final delivery.
-          </p>
-          <div className="trust-row">
-            <span>
-              <CheckCircle2 size={16} /> Shared workflow
-            </span>
-            <span>
-              <CheckCircle2 size={16} /> Clear budgets
-            </span>
-            <span>
-              <CheckCircle2 size={16} /> Built for both sides
-            </span>
-          </div>
+        <button className="welcome-logo-button" onClick={() => scrollTo("top")}>
+          <Logo />
+        </button>
+        <div className="welcome-links">
+          <button onClick={() => scrollTo("business")}>For Businesses</button>
+          <button onClick={() => scrollTo("creator")}>For Creators</button>
+          <button onClick={() => scrollTo("how-it-works")}>How It Works</button>
         </div>
-        <div className="role-panel">
-          <p className="eyebrow">Choose your demo</p>
-          <h2>How will you use CreatorBridge?</h2>
+        <div className="welcome-nav-mark" aria-hidden="true">
+          <span />
+          <span />
+        </div>
+      </nav>
+      <section className="welcome-hero" id="top">
+        <div className="welcome-copy">
+          <h1>Choose your<br />creator journey.</h1>
           <p>
-            Explore the same campaign from either side. You can switch roles at
-            any time.
+            A smarter way for brands, creators and production partners to
+            collaborate, create and grow together.
           </p>
-          <button className="role-card" onClick={() => onSelect("business")}>
-            <span className="role-icon business">
-              <Building2 />
-            </span>
-            <span>
-              <strong>I’m a Business</strong>
-              <small>Find creators, launch campaigns, and manage spend.</small>
-            </span>
-            <ArrowRight size={19} />
-          </button>
-          <button className="role-card" onClick={() => onSelect("creator")}>
-            <span className="role-icon creator">
-              <Sparkles />
-            </span>
-            <span>
-              <strong>I’m a Creator</strong>
-              <small>
-                Find opportunities, manage requests, and track work.
-              </small>
-            </span>
-            <ArrowRight size={19} />
-          </button>
-          <button className="explore-link" onClick={() => onSelect("business")}>
-            Explore demo as GlowLab <ArrowRight size={15} />
-          </button>
-          <p className="demo-note">
-            All profiles, brands, transactions, and figures are fictional demo
-            data.
-          </p>
+        </div>
+        <div className="welcome-hero-note">
+          <span className="welcome-rule" />
+          <p>People · Ideas · Impact</p>
         </div>
       </section>
-      <div className="welcome-orb orb-one" />
-      <div className="welcome-orb orb-two" />
+      <section className="journey-grid" aria-label="Choose your portal">
+        <button className="journey-card journey-business" id="business" onClick={() => onSelect("business")}>
+          <span className="journey-label">For businesses <i /></span>
+          <span className="journey-title">Brand<br />partner</span>
+          <span className="journey-description">
+            For businesses looking to discover the right creators, launch
+            impactful campaigns, and manage collaborations effortlessly.
+          </span>
+          <span className="journey-benefits">
+            <span><CheckCircle2 size={15} /> Campaign creation and management</span>
+            <span><CheckCircle2 size={15} /> Creator discovery and insights</span>
+            <span><CheckCircle2 size={15} /> Collaboration and budget tracking</span>
+          </span>
+          <span className="journey-cta">Continue as business <ArrowRight size={17} /></span>
+          <span className="journey-orb" aria-hidden="true" />
+        </button>
+        <button className="journey-card journey-creator" id="creator" onClick={() => onSelect("creator")}>
+          <span className="journey-label">For content creators <i /></span>
+          <span className="journey-title">Creator<br />space</span>
+          <span className="journey-description">
+            For creators ready to showcase their work, discover exciting brand
+            opportunities, and build meaningful partnerships.
+          </span>
+          <span className="journey-benefits">
+            <span><CheckCircle2 size={15} /> Personalized creator portfolio</span>
+            <span><CheckCircle2 size={15} /> Discover brand campaigns</span>
+            <span><CheckCircle2 size={15} /> Manage collaborations and earnings</span>
+          </span>
+          <span className="journey-cta">Continue as creator <ArrowRight size={17} /></span>
+          <span className="journey-orb" aria-hidden="true" />
+        </button>
+      </section>
+      <section className="how-it-works" id="how-it-works">
+        <div>
+          <p className="welcome-eyebrow">How it works</p>
+          <h2>From first hello<br />to lasting growth.</h2>
+        </div>
+        <div className="workflow-grid">
+          {[
+            ["01", "Discover", "Find creators or campaigns that feel like the right fit."],
+            ["02", "Connect", "Send collaboration requests or apply to opportunities."],
+            ["03", "Collaborate", "Agree on deliverables, budgets, and deadlines."],
+            ["04", "Grow", "Track campaigns, partnerships, and performance together."],
+          ].map(([number, title, description]) => (
+            <div className="workflow-step" key={number}>
+              <span>{number}</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="welcome-final">
+        <p className="welcome-eyebrow">The bridge is open</p>
+        <h2>Better connections.<br />Better campaigns.</h2>
+        <div className="welcome-final-actions">
+          <button className="welcome-outline-button" onClick={() => onSelect("business")}>Find creators <ArrowRight size={17} /></button>
+          <button className="welcome-outline-button" onClick={() => onSelect("creator")}>Explore opportunities <ArrowRight size={17} /></button>
+        </div>
+      </section>
+      <footer className="welcome-footer">
+        <Logo />
+        <div>
+          <button onClick={() => scrollTo("business")}>For Businesses</button>
+          <button onClick={() => scrollTo("creator")}>For Creators</button>
+          <button onClick={() => scrollTo("how-it-works")}>How It Works</button>
+          <button>Contact</button>
+          <button>Privacy Policy</button>
+          <button>Terms</button>
+        </div>
+      </footer>
     </main>
   )
 }
@@ -617,7 +654,7 @@ function Shell({
         </nav>
         <div className="sidebar-help">
           <MessageSquare size={18} />
-          <strong>Need a guided tour?</strong>
+          <strong>Quick start</strong>
           <p>
             Follow the purple actions to try the full collaboration workflow.
           </p>
@@ -645,7 +682,7 @@ function Shell({
           </button>
           <div className="topbar-title">
             <span className="live-dot" />
-            Demo environment
+            Workspace
           </div>
           <div className="topbar-actions">
             <button className="icon-button" aria-label="Notifications">
@@ -915,6 +952,7 @@ function BusinessPages({
   if (page === "collaborations")
     return <BusinessCollaborations data={data} invite={invite} />
   if (page === "budget") return <BudgetSchedule data={data} />
+  if (page === "billing") return <BillingPage role="business" />
   return <SettingsPage reset={reset} role="business" setData={setData} />
 }
 
@@ -1940,6 +1978,7 @@ function CreatorPages({
   if (page === "profile")
     return <ProfileEditor data={data} setData={setData} toast={toast} />
   if (page === "earnings") return <Earnings data={data} />
+  if (page === "billing") return <BillingPage role="creator" />
   return <SettingsPage reset={reset} role="creator" setData={setData} />
 }
 
@@ -3284,6 +3323,58 @@ function ReviewItem({ review }: { review: Review }) {
   )
 }
 
+function BillingPage({ role }: { role: Role }) {
+  const plans = [
+    ["Starter (free)", "0", role === "creator" ? "Solo creators testing the platform" : "Emerging brands testing the platform", "1", "1", "Yes", "12%", "Basic", "Pay per package", "Yes (limited storage)", "Community"],
+    ["Creator Pro", "15 to 25", "Full-time creators", "10", "2", "Yes", "10%", "Full with ROI", "5% discount", "Yes", "Email"],
+    ["Business", "49 to 79", "Brands and small teams", "30", "5", "Yes", "8%", "Full with multi-campaign ROI", "10% discount", "Yes", "Priority email"],
+    ["Agency", "149 to 249", "Agencies and managers", "Unlimited", "15 (extra seats billed)", "Yes", "6% (negotiable)", "Full with client-level reporting", "15% discount", "Yes", "Dedicated manager"],
+  ]
+  const rows = [
+    "Price per month",
+    "Who it is for",
+    "Active campaigns",
+    "Team seats",
+    "Marketplace booking",
+    "Booking commission",
+    "Budget and income tracker",
+    "PR packages",
+    "In-app chat and file sharing",
+    "Support",
+  ]
+  return (
+    <section className="billing-page">
+      <PageHeader
+        title="Billing & plans"
+        description="Choose the plan that fits the way you create, collaborate, and grow."
+      />
+      <div className="billing-frame">
+        <div className="billing-table-wrap">
+          <table className="billing-table">
+            <thead>
+              <tr>
+                <th aria-label="Plan features" />
+                {plans.map(([name]) => <th key={name}>{name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((label, rowIndex) => (
+                <tr key={label}>
+                  <th scope="row">{label}</th>
+                  {plans.map((plan) => (
+                    <td key={`${plan[0]}-${label}`}>{plan[rowIndex + 1]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="billing-note">Annual billing gets about two months free.</p>
+      </div>
+    </section>
+  )
+}
+
 function SettingsPage({
   reset,
   role,
@@ -3321,7 +3412,7 @@ function SettingsPage({
             <PackageCheck />
           </span>
           <div>
-            <h2>Demo environment</h2>
+            <h2>Workspace details</h2>
             <p>
               Profiles, brands, transactions, and financial figures in this
               prototype are fictional.
