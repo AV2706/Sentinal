@@ -472,8 +472,52 @@ const creatorNav: Array<[Page, string, LucideIcon]> = [
 ]
 
 function Welcome({ onSelect }: { onSelect: (role: Role) => void }) {
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | null>(null)
+  const [authRole, setAuthRole] = useState<Role>("business")
+  const [authError, setAuthError] = useState("")
+  const [authBusy, setAuthBusy] = useState(false)
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+  }
+  const openAuth = (mode: "signin" | "signup") => {
+    setAuthMode(mode)
+    setAuthError("")
+  }
+  const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const email = String(form.get("email") || "").trim()
+    const password = String(form.get("password") || "")
+    const name = String(form.get("name") || "").trim()
+    if (!email || !password || (authMode === "signup" && !name)) {
+      setAuthError("Please complete all required fields.")
+      return
+    }
+    if (password.length < 8) {
+      setAuthError("Use at least 8 characters for your password.")
+      return
+    }
+    setAuthBusy(true)
+    setAuthError("")
+    try {
+      const response = await fetch(`/api/auth/${authMode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role: authRole }),
+      })
+      const payload = (await response.json()) as { error?: string; token?: string }
+      if (!response.ok || !payload.token) {
+        setAuthError(payload.error || "Authentication failed. Please try again.")
+        return
+      }
+      localStorage.setItem("creatorbridge-token", payload.token)
+      setAuthMode(null)
+      onSelect(authRole)
+    } catch {
+      setAuthError("Could not reach CreatorBridge. Please try again.")
+    } finally {
+      setAuthBusy(false)
+    }
   }
 
   return (
@@ -490,6 +534,10 @@ function Welcome({ onSelect }: { onSelect: (role: Role) => void }) {
         <div className="welcome-nav-mark" aria-hidden="true">
           <span />
           <span />
+        </div>
+        <div className="auth-actions">
+          <button className="auth-link" onClick={() => openAuth("signin")}>Sign in</button>
+          <button className="auth-button" onClick={() => openAuth("signup")}>Sign up <ArrowRight size={14} /></button>
         </div>
       </nav>
       <section className="welcome-hero" id="top">
@@ -576,6 +624,39 @@ function Welcome({ onSelect }: { onSelect: (role: Role) => void }) {
           <button>Terms</button>
         </div>
       </footer>
+      {authMode && (
+        <div className="auth-backdrop" role="presentation" onMouseDown={() => setAuthMode(null)}>
+          <section className="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-title" onMouseDown={(event) => event.stopPropagation()}>
+            <button className="auth-close" aria-label="Close authentication form" onClick={() => setAuthMode(null)}>×</button>
+            <p className="welcome-eyebrow">{authMode === "signin" ? "Welcome back" : "Join CreatorBridge"}</p>
+            <h2 id="auth-title">{authMode === "signin" ? "Sign in to your space." : "Make room for better work."}</h2>
+            <p className="auth-intro">
+              {authMode === "signin"
+                ? "Continue to your campaigns, opportunities, and collaborations."
+                : "Create your account and start building meaningful partnerships."}
+            </p>
+            <div className="auth-tabs">
+              <button type="button" className={authMode === "signin" ? "active" : ""} onClick={() => openAuth("signin")}>Sign in</button>
+              <button type="button" className={authMode === "signup" ? "active" : ""} onClick={() => openAuth("signup")}>Sign up</button>
+            </div>
+            <form className="auth-form" onSubmit={submitAuth}>
+              {authMode === "signup" && <label>Name<input name="name" autoComplete="name" placeholder="Your name" /></label>}
+              <label>Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" /></label>
+              <label>Password<input name="password" type="password" autoComplete={authMode === "signin" ? "current-password" : "new-password"} placeholder="••••••••" /></label>
+              <div className="auth-role">
+                <span>I am joining as</span>
+                <div>
+                  <button type="button" className={authRole === "business" ? "active" : ""} onClick={() => setAuthRole("business")}>Business</button>
+                  <button type="button" className={authRole === "creator" ? "active" : ""} onClick={() => setAuthRole("creator")}>Creator</button>
+                </div>
+              </div>
+              {authError && <p className="auth-error" role="alert">{authError}</p>}
+              <button className="auth-submit" type="submit" disabled={authBusy}>{authBusy ? "Connecting..." : authMode === "signin" ? "Enter CreatorBridge" : "Create account"} {!authBusy && <ArrowRight size={16} />}</button>
+            </form>
+            <p className="auth-note">This prototype uses fictional demo data. No account is created.</p>
+          </section>
+        </div>
+      )}
     </main>
   )
 }
@@ -583,11 +664,10 @@ function Welcome({ onSelect }: { onSelect: (role: Role) => void }) {
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="logo">
-      <span>
-        <span />
-        <span />
-      </span>
-      {!compact && <strong>CreatorBridge</strong>}
+      <img
+        src={compact ? "/creatorbridge-mark.png" : "/creatorbridge-logo.png"}
+        alt="CreatorBridge"
+      />
     </div>
   )
 }
@@ -618,7 +698,7 @@ function Shell({
     <div className={cx("app-shell", `shell-${role}`)}>
       <aside className={cx("sidebar", open && "sidebar-open")}>
         <div className="sidebar-top">
-          <Logo />
+          <Logo compact />
           <button
             className="mobile-close"
             onClick={() => setOpen(false)}
@@ -628,7 +708,9 @@ function Shell({
           </button>
         </div>
         <div className="workspace-chip">
-          <span>{identity.initials}</span>
+          <span className="workspace-mark">
+            <img src="/creatorbridge-mark.png" alt="" />
+          </span>
           <div>
             <strong>{identity.name}</strong>
             <small>{identity.sub}</small>
@@ -680,6 +762,9 @@ function Shell({
           >
             <Menu />
           </button>
+          <div className="authenticated-mark">
+            <Logo compact />
+          </div>
           <div className="topbar-title">
             <span className="live-dot" />
             Workspace

@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import fs from "node:fs"
 import path from "node:path"
+import { handleAuthRequest } from "./server/auth-api.mjs"
 
 import siteConfiguration from "./.figma/make/site.json"
 
@@ -22,6 +23,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      authApiPlugin(),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
@@ -47,6 +49,21 @@ export default defineConfig(({ mode }) => {
     },
   }
 })
+
+function authApiPlugin(): Plugin {
+  return {
+    name: "creatorbridge-auth-api",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.startsWith("/api/auth/")) {
+          next()
+          return
+        }
+        void handleAuthRequest(req, res)
+      })
+    },
+  }
+}
 
 type FigmaSiteConfiguration = {
   title?: string
