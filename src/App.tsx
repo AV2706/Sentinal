@@ -683,7 +683,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="logo">
       <img
-        src={compact ? "/creatorbridge-mark.png" : "/creatorbridge-logo.png"}
+        src={`${import.meta.env.BASE_URL}${compact ? "creatorbridge-mark.png" : "creatorbridge-logo.png"}`}
         alt="CreatorBridge"
       />
     </div>
@@ -727,7 +727,7 @@ function Shell({
         </div>
         <div className="workspace-chip">
           <span className="workspace-mark">
-            <img src="/creatorbridge-mark.png" alt="" />
+            <img src={`${import.meta.env.BASE_URL}creatorbridge-mark.png`} alt="" />
           </span>
           <div>
             <strong>{identity.name}</strong>
