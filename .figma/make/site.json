@@ -1,0 +1,10 @@
+{
+  "description": "Connects businesses with creators and production vendors to discover talent, manage campaign collaborations, track schedules, and control budgets in one shared platform.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
